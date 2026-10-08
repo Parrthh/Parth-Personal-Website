@@ -1,0 +1,22 @@
+{
+  "name": "parthkharkar-infra",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:site": "npm --prefix ../site run build",
+    "synth": "npm run build:site && cdk synth",
+    "deploy": "npm run build:site && cdk deploy PersonalWebsiteStack --profile personal-website",
+    "deploy:github": "cdk deploy PersonalWebsiteGithubStack --profile personal-website",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.200.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "aws-cdk": "^2.1020.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.3"
+  }
+}
