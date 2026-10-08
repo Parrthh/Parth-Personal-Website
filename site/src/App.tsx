@@ -36,20 +36,34 @@ function useSmoothScroll() {
 
 function useReveal() {
   useEffect(() => {
-    const els = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            e.target.classList.add("is-in");
-            io.unobserve(e.target);
-          }
+    // Reveal each block once its top enters the lower part of the screen. Anything already scrolled past
+    // (for example after clicking a nav link) is revealed too, so content can never stay hidden.
+    let pending = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-in)"));
+    let queued = false;
+    const check = () => {
+      queued = false;
+      const limit = (window.innerHeight || document.documentElement.clientHeight) * 0.92;
+      pending = pending.filter((el) => {
+        if (el.getBoundingClientRect().top < limit) {
+          el.classList.add("is-in");
+          return false;
         }
-      },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+        return true;
+      });
+    };
+    const onScroll = () => {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(check);
+      }
+    };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 }
 
@@ -213,7 +227,6 @@ export default function App() {
       <Suspense fallback={null}>
         <Scene />
       </Suspense>
-      <div className="grain" aria-hidden="true" />
 
       <header className={`nav ${scrolled ? "is-scrolled" : ""} ${menuOpen ? "is-open" : ""}`}>
         <div className="wrap nav-inner">

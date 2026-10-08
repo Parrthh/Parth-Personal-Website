@@ -42,7 +42,7 @@ void main(){
   p.xy += uMouse * 0.12 * (0.4 + aRand);
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = (1.6 + aRand * 2.4) * uPixelRatio * (7.0 / -mv.z);
+  gl_PointSize = (2.0 + aRand * 2.8) * uPixelRatio * (7.0 / -mv.z);
   vAlpha = 0.25 + 0.75 * smoothstep(-0.4, 0.7, n);
   vRand = aRand;
 }`;
@@ -104,7 +104,7 @@ function Field({ count, reduced }: { count: number; reduced: boolean }) {
           uMorph: { value: 0 },
           uOpacity: { value: 1 },
           uMouse: { value: new THREE.Vector2() },
-          uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.75) },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.25) },
           uColorA: { value: new THREE.Color("#c8ff2e") },
           uColorB: { value: new THREE.Color("#e9e5dc") },
         },
@@ -140,7 +140,7 @@ function Field({ count, reduced }: { count: number; reduced: boolean }) {
 
     u.uTime.value += dt * (reduced ? 0.25 : 1);
     u.uMorph.value += (ease(s, 0.1, 1.1) - u.uMorph.value) * 0.08;
-    u.uOpacity.value = 1 - 0.65 * ease(s, 0.7, 1.8);
+    u.uOpacity.value = 1 - ease(s, 0.8, 1.7);
     u.uMouse.value.set(m.x, m.y);
 
     const morph = u.uMorph.value;
@@ -157,16 +157,45 @@ function Field({ count, reduced }: { count: number; reduced: boolean }) {
   return <points ref={ref} geometry={geometry} material={material} />;
 }
 
+// Renders at most 30 frames per second, only while the hero area is on screen and the tab is visible.
+// Once you scroll past it, the scene fades out and stops drawing entirely.
+function Driver() {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    let id = 0;
+    let last = 0;
+    let wasVisible = true;
+    const tick = (t: number) => {
+      id = requestAnimationFrame(tick);
+      if (document.hidden) return;
+      const visible = window.scrollY < window.innerHeight * 1.8;
+      if (visible && t - last >= 33) {
+        last = t;
+        invalidate();
+      } else if (!visible && wasVisible) {
+        invalidate(); // one last frame so the faded-out state is what stays on screen
+      }
+      wasVisible = visible;
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [invalidate]);
+  return null;
+}
+
 export default function Scene() {
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const count = typeof window !== "undefined" && window.innerWidth < 700 ? 4500 : 9000;
+  const lowPower = typeof navigator !== "undefined" && (navigator.hardwareConcurrency || 8) <= 4;
+  const count = typeof window !== "undefined" && window.innerWidth < 700 ? 2000 : lowPower ? 3000 : 4500;
   return (
     <div className="scene" aria-hidden="true">
       <Canvas
-        dpr={[1, 1.75]}
+        frameloop="demand"
+        dpr={[1, 1.25]}
         camera={{ position: [0, 0, 6], fov: 45 }}
         gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
       >
+        <Driver />
         <Field count={count} reduced={reduced} />
       </Canvas>
     </div>
