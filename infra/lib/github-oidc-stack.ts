@@ -4,6 +4,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 
 export interface GithubOidcStackProps extends cdk.StackProps {
   githubRepo: string; // "owner/repo"
+  githubSubjectPrefix?: string; // immutable format, e.g. "repo:owner@123/repo@456"
   createOidcProvider: boolean;
 }
 
@@ -27,7 +28,14 @@ export class GithubOidcStack extends cdk.Stack {
       maxSessionDuration: cdk.Duration.hours(1),
       assumedBy: new iam.WebIdentityPrincipal(provider.openIdConnectProviderArn, {
         StringEquals: { [`${host}:aud`]: "sts.amazonaws.com" },
-        StringLike: { [`${host}:sub`]: `repo:${props.githubRepo}:ref:refs/heads/main` },
+        StringLike: {
+          // GitHub sends either the classic subject or, for repos using immutable subjects,
+          // one that includes the owner and repo IDs. Both are pinned to the main branch.
+          [`${host}:sub`]: [
+            `repo:${props.githubRepo}:ref:refs/heads/main`,
+            ...(props.githubSubjectPrefix ? [`${props.githubSubjectPrefix}:ref:refs/heads/main`] : []),
+          ],
+        },
       }),
     });
 

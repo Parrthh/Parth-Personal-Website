@@ -25,6 +25,7 @@ new SiteStack(app, "PersonalWebsiteStack", {
 new GithubOidcStack(app, "PersonalWebsiteGithubStack", {
   env,
   githubRepo: ctx("githubRepo"),
+  githubSubjectPrefix: app.node.tryGetContext("githubSubjectPrefix"),
   createOidcProvider: String(app.node.tryGetContext("createOidcProvider")) !== "false",
 });
 
