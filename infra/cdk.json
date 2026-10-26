@@ -6,6 +6,7 @@
     "fromAddress": "contact@parthkharkar.com",
     "toAddress": "parrthhkharkar@gmail.com",
     "githubRepo": "Parrthh/Parth-Personal-Website",
-    "createOidcProvider": true
+    "createOidcProvider": true,
+    "githubSubjectPrefix": "repo:Parrthh@102367787/Parth-Personal-Website@1410369245"
   }
 }
